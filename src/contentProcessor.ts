@@ -17,7 +17,11 @@ import {
 } from "./config";
 import { linkHashes } from "./linksHash";
 
-export function imageTagProcessor(app: App, mediaDir: string) {
+export function imageTagProcessor(
+  app: App,
+  mediaDir: string,
+  randImageName: boolean
+) {
   async function processImageTag(match: string, anchor: string, link: string) {
     if (!isUrl(link)) {
       return match;
@@ -34,9 +38,10 @@ export function imageTagProcessor(app: App, mediaDir: string) {
           const { fileName, needWrite } = await chooseFileName(
             app.vault.adapter,
             mediaDir,
-            anchor,
+            "", // anchor,
             link,
-            fileData
+            fileData,
+            randImageName
           );
 
           if (needWrite && fileName) {
@@ -66,12 +71,38 @@ export function imageTagProcessor(app: App, mediaDir: string) {
   return processImageTag;
 }
 
+function formatTime(date: Date) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+  const second = date.getSeconds();
+
+  const formatNumber = (n: number) => {
+    const s = n.toString();
+    return s[1] ? s : "0" + s;
+  };
+
+  // return (
+  //   [year, month, day].map(formatNumber).join("-") +
+  //   "_" +
+  //   [hour, minute, second].map(formatNumber).join(":")
+  // );
+
+  return (
+    [year, month, day].map(formatNumber).join("") +
+    [hour, minute, second].map(formatNumber).join("")
+  );
+}
+
 async function chooseFileName(
   adapter: DataAdapter,
   dir: string,
   baseName: string,
   link: string,
-  contentData: ArrayBuffer
+  contentData: ArrayBuffer,
+  randImageName: boolean
 ): Promise<{ fileName: string; needWrite: boolean }> {
   const fileExt = await fileExtByContent(contentData);
   if (!fileExt) {
@@ -94,11 +125,19 @@ async function chooseFileName(
   }
 
   baseName = cleanFileName(baseName);
+  if (randImageName) {
+    // const rand = Math.ceil(Math.random() * 1000);
+    // let date: Date = new Date();
+    // baseName += formatTime(date) + "_" + rand.toString();
+    const rand = Math.ceil(Math.random() * 100000);
+    baseName += "_" + rand.toString();
+  }
 
   let fileName = "";
   let needWrite = true;
   let index = 0;
   while (!fileName && index < MAX_FILENAME_INDEX) {
+    // 异步会导致这里的文件改名机制可能失效
     const suggestedName = index
       ? pathJoin(dir, `${baseName}-${index}.${fileExt}`)
       : pathJoin(dir, `${baseName}.${fileExt}`);

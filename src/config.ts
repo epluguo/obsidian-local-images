@@ -17,7 +17,7 @@ export const NOTICE_TIMEOUT = 10 * 1000;
 
 export const TIMEOUT_LIKE_INFINITY = 24 * 60 * 60 * 1000;
 
-export const FORBIDDEN_SYMBOLS_FILENAME_PATTERN = /\s+/g;
+export const FORBIDDEN_SYMBOLS_FILENAME_PATTERN = /[ \t\-!！\s`。+、]*/g;
 export interface ISettings {
   realTimeUpdate: boolean;
   realTimeUpdateInterval: number;
@@ -26,6 +26,9 @@ export interface ISettings {
   showNotifications: boolean;
   include: string;
   mediaRootDirectory: string;
+  // 每篇文章单独一个子目录
+  useMediaSubDir: boolean;
+  randImageName: boolean;
 }
 
 export const DEFAULT_SETTINGS: ISettings = {
@@ -36,4 +39,6 @@ export const DEFAULT_SETTINGS: ISettings = {
   showNotifications: false,
   include: ".*\\.md",
   mediaRootDirectory: "media",
+  useMediaSubDir: true,
+  randImageName: false,
 };

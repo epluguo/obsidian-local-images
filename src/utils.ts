@@ -55,10 +55,26 @@ export function cleanContent(content: string) {
 }
 
 export function cleanFileName(name: string) {
-  const cleanedName = filenamify(name).replace(
+  let cleanedName = filenamify(name).replace(
     FORBIDDEN_SYMBOLS_FILENAME_PATTERN,
-    "_"
+    ""
   );
+  const nameConverts: { [key: string]: string } = {
+    "（": "(",
+    "）": ")",
+    "[": "(",
+    "]": ")",
+    "【": "(",
+    "】": ")",
+    "：": ":",
+    ":": "_",
+    "”": '"',
+    "“": '"',
+  };
+  for (const key in nameConverts) {
+    cleanedName = cleanedName.replace(key, nameConverts[key]);
+  }
+  // cleanedName = cleanedName.replace(FORBIDDEN_SYMBOLS_FILENAME_PATTERN, "_");
   return cleanedName;
 }
 

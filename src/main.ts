@@ -9,7 +9,7 @@ import {
 import safeRegex from "safe-regex";
 
 import { imageTagProcessor } from "./contentProcessor";
-import { replaceAsync, cleanContent } from "./utils";
+import { replaceAsync, cleanContent, cleanFileName } from "./utils";
 import {
   ISettings,
   DEFAULT_SETTINGS,
@@ -29,7 +29,18 @@ export default class LocalImagesPlugin extends Plugin {
     // const content = await this.app.vault.read(file);
     const content = await this.app.vault.cachedRead(file);
 
-    await this.ensureFolderExists(this.settings.mediaRootDirectory);
+    let mediaDirectory = this.settings.mediaRootDirectory;
+    if (this.settings.useMediaSubDir) {
+      let filename = cleanFileName(file.basename);
+      if (!this.settings.mediaRootDirectory.endsWith("/")) {
+        mediaDirectory = mediaDirectory + "/";
+      }
+      mediaDirectory = mediaDirectory + filename;
+    }
+
+    await this.ensureFolderExists(mediaDirectory);
+
+    const randImageName = this.settings.randImageName;
 
     const cleanedContent = this.settings.cleanContent
       ? cleanContent(content)
@@ -37,7 +48,7 @@ export default class LocalImagesPlugin extends Plugin {
     const fixedContent = await replaceAsync(
       cleanedContent,
       EXTERNAL_MEDIA_LINK_PATTERN,
-      imageTagProcessor(this.app, this.settings.mediaRootDirectory)
+      imageTagProcessor(this.app, mediaDirectory, randImageName)
     );
 
     if (content != fixedContent) {
@@ -336,6 +347,30 @@ class SettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.mediaRootDirectory)
           .onChange(async (value) => {
             this.plugin.settings.mediaRootDirectory = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Use SubDir")
+      .setDesc("Use sub folder as media root.")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.useMediaSubDir)
+          .onChange(async (value) => {
+            this.plugin.settings.useMediaSubDir = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Random Image Name")
+      .setDesc("Use random image name to avoid conflict")
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.randImageName)
+          .onChange(async (value) => {
+            this.plugin.settings.randImageName = value;
             await this.plugin.saveSettings();
           })
       );
